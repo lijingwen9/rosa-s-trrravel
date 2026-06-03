@@ -1,19 +1,37 @@
 import { CHINA_ADCODE } from '../data/adcodes'
 
-const GEO_BASE = 'https://geo.datav.aliyun.com/areas_v3/bound'
-
 const geoCache: Record<string, unknown> = {}
 
 export async function fetchGeoJSON(adcode: string): Promise<unknown> {
-  const key = adcode
-  if (geoCache[key]) return geoCache[key]
+  if (geoCache[adcode]) return geoCache[adcode]
 
-  const suffix = adcode === CHINA_ADCODE ? '_full' : '_full'
-  const url = `${GEO_BASE}/${adcode}${suffix}.json`
+  if (adcode === CHINA_ADCODE) {
+    const base = import.meta.env.BASE_URL || './'
+    const resp = await fetch(`${base}china.json`)
+    if (!resp.ok) throw new Error('Failed to load china map data')
+    const data = await resp.json()
+    geoCache[adcode] = data
+    return data
+  }
 
-  const resp = await fetch(url)
-  if (!resp.ok) throw new Error(`Failed to fetch geo data: ${adcode}`)
-  const data = await resp.json()
-  geoCache[key] = data
-  return data
+  // 省份数据：尝试多个数据源
+  const urls = [
+    `https://geo.datav.aliyun.com/areas_v3/bound/${adcode}_full.json`,
+    `https://geojson.cn/api/data/${adcode}_full.json`,
+  ]
+
+  for (const url of urls) {
+    try {
+      const resp = await fetch(url)
+      if (resp.ok) {
+        const data = await resp.json()
+        geoCache[adcode] = data
+        return data
+      }
+    } catch {
+      continue
+    }
+  }
+
+  throw new Error(`Failed to fetch geo data: ${adcode}`)
 }
