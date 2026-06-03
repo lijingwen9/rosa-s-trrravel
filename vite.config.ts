@@ -7,12 +7,13 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      selfDestroying: true,
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
         name: '我的旅行足迹',
         short_name: '旅行足迹',
-        description: 'Rosa的旅行足迹点亮地图',
+        description: '旅行足迹点亮地图',
         theme_color: '#3b82f6',
         background_color: '#f8fafc',
         display: 'standalone',
@@ -35,25 +36,6 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
-          }
-        ]
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/geo\.datav\.aliyun\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'map-geo-data',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 30
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
           }
         ]
       }
