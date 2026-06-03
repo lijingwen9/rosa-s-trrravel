@@ -49,6 +49,7 @@ export default function MapView({ project, mapMode, onUpdateProject }: MapViewPr
   const chartRef = useRef<HTMLDivElement>(null)
   const chartInstance = useRef<echarts.ECharts | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [modal, setModal] = useState<ModalState | null>(null)
   const [currentProvince, setCurrentProvince] = useState<string | null>(null)
   const [cityMapReady, setCityMapReady] = useState(false)
@@ -169,6 +170,7 @@ export default function MapView({ project, mapMode, onUpdateProject }: MapViewPr
       setLoading(false)
     } catch (err) {
       console.error('Failed to load map:', err)
+      setError('地图数据加载失败，请检查网络后刷新')
       setLoading(false)
     }
   }, [loadProvinceDetail])
@@ -244,10 +246,19 @@ export default function MapView({ project, mapMode, onUpdateProject }: MapViewPr
   }, [])
 
   return (
-    <div className="relative w-full h-full min-h-[400px]" style={{ touchAction: 'none' }}>
+    <div className="relative w-full h-full" style={{ touchAction: 'none', minHeight: '500px' }}>
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
           <div className="text-sm text-gray-400">地图加载中...</div>
+        </div>
+      )}
+
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
+          <div className="text-sm text-red-500 text-center px-4">
+            <p>{error}</p>
+            <button onClick={() => { setError(''); initChart() }} className="mt-2 text-blue-500 underline">重试</button>
+          </div>
         </div>
       )}
 
@@ -266,7 +277,7 @@ export default function MapView({ project, mapMode, onUpdateProject }: MapViewPr
         </div>
       )}
 
-      <div ref={chartRef} className="w-full h-full min-h-[400px]" style={{ height: '100%', touchAction: 'none' }} />
+      <div ref={chartRef} className="w-full" style={{ height: '100%', minHeight: '500px', touchAction: 'none' }} />
 
       {modal && (
         <Modal

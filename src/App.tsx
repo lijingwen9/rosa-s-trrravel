@@ -131,7 +131,7 @@ export default function App() {
             </button>
           </div>
 
-          <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
+          <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" style={{ minHeight: '500px', height: 'calc(100vh - 180px)' }}>
             <MapView
               project={currentProject}
               mapMode={mapMode}
