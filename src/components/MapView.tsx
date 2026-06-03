@@ -234,8 +234,9 @@ export default function MapView({ project, mapMode, onUpdateProject }: MapViewPr
       const option = buildProvinceDetailOption(mapName, citiesInProvince)
       chartInstance.current.setOption(option)
     } else if (!currentProvince) {
-      const option = buildChinaMapOption(project, mapMode)
-      chartInstance.current.setOption(option)
+      // 只更新数据，不重设 zoom/roam，避免缩放被重置
+      const dataOption = buildChinaMapDataOnly(project, mapMode)
+      chartInstance.current.setOption(dataOption)
     }
   }, [project.provinces, project.cities])
 
@@ -421,6 +422,44 @@ function buildChinaMapOption(project: Project, mapMode: MapMode): echarts.EChart
         return `<strong>${p.name}</strong>${status ? '<br/>' + status : ''}`
       }
     }
+  }
+}
+
+// 只更新数据颜色，不重设 zoom/roam
+function buildChinaMapDataOnly(project: Project, mapMode: MapMode): echarts.EChartsOption {
+  const litProvinces = new Set(
+    Object.entries(project.provinces).filter(([, v]) => v.lit).map(([k]) => k)
+  )
+  const litCities: Record<string, Set<string>> = {}
+  for (const [prov, cities] of Object.entries(project.cities)) {
+    const litSet = new Set(
+      Object.entries(cities).filter(([, v]) => v.lit).map(([k]) => k)
+    )
+    if (litSet.size > 0) litCities[prov] = litSet
+  }
+
+  const data = Object.keys(PROVINCE_ADCODES).map(name => {
+    const isProvinceLit = litProvinces.has(name)
+    const hasCityLit = !!litCities[name]
+    let value = 0
+    if (mapMode === 'province') {
+      value = isProvinceLit ? 2 : 0
+    } else {
+      value = isProvinceLit ? 2 : (hasCityLit ? 1 : 0)
+    }
+    return {
+      name,
+      value,
+      itemStyle: value === 2
+        ? { areaColor: '#93c5fd', shadowColor: 'rgba(59,130,246,0.5)', shadowBlur: 10 }
+        : value === 1
+          ? { areaColor: '#fef3c7', shadowColor: 'rgba(249,115,22,0.2)', shadowBlur: 4 }
+          : { areaColor: '#fff' }
+    }
+  })
+
+  return {
+    series: [{ data }]
   }
 }
 
