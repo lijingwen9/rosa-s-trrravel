@@ -232,10 +232,10 @@ export default function MapView({ project, mapMode, onUpdateProject }: MapViewPr
       const mapName = `province_${adcode}`
       const citiesInProvince = project.cities[currentProvince] || {}
       const option = buildProvinceDetailOption(mapName, citiesInProvince)
-      chartInstance.current.setOption(option, true)
+      chartInstance.current.setOption(option)
     } else if (!currentProvince) {
       const option = buildChinaMapOption(project, mapMode)
-      chartInstance.current.setOption(option, true)
+      chartInstance.current.setOption(option)
     }
   }, [project.provinces, project.cities])
 
