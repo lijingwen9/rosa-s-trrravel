@@ -26,7 +26,7 @@ interface GeoFeature {
   properties: { name: string; center?: [number, number] }
 }
 
-const MUNICIPALITIES = new Set(['北京市', '天津市', '上海市', '重庆市'])
+const MUNICIPALITIES = new Set(['北京市', '天津市', '上海市', '重庆市', '香港特别行政区', '澳门特别行政区'])
 
 const cityCenterCache: Record<string, Record<string, [number, number]>> = {}
 
@@ -139,7 +139,7 @@ export default function MapView({ project, mapMode, onUpdateProject }: MapViewPr
       chart.on('click', (params) => {
         const name = params.name as string
         if (!name) return
-        if (params.componentType === 'series' && params.seriesType === 'effectScatter') return
+        if (params.componentType === 'markPoint') return
         if (mapModeRef.current === 'all') {
           const provinceData = projectRef.current.provinces[name]
           const provinceCities = projectRef.current.cities[name] || {}
@@ -336,6 +336,25 @@ function buildChinaMapOption(project: Project, mapMode: MapMode): echarts.EChart
     }
   }
 
+  const markPointData = cityScatterData.map(d => ({
+    name: d.name,
+    coord: [d.value[0], d.value[1]],
+    symbol: 'circle',
+    symbolSize: 4,
+    itemStyle: {
+      color: '#f97316',
+      shadowColor: 'rgba(249,115,22,0.3)',
+      shadowBlur: 3
+    },
+    label: {
+      show: true,
+      formatter: d.name.split('(')[0],
+      position: 'right' as const,
+      fontSize: 9,
+      color: '#ea580c'
+    }
+  }))
+
   const series: echarts.EChartsOption['series'] = [
     {
       type: 'map',
@@ -357,6 +376,11 @@ function buildChinaMapOption(project: Project, mapMode: MapMode): echarts.EChart
         borderWidth: 0.5,
         areaColor: '#fff'
       },
+      markPoint: markPointData.length > 0 ? {
+        symbol: 'circle',
+        symbolSize: 4,
+        data: markPointData
+      } : undefined,
       data: data.map(d => ({
         name: d.name,
         value: d.value,
@@ -369,53 +393,14 @@ function buildChinaMapOption(project: Project, mapMode: MapMode): echarts.EChart
     }
   ]
 
-  // 添加城市散点图层
-  if (cityScatterData.length > 0) {
-    series.push({
-      type: 'effectScatter',
-      coordinateSystem: 'geo',
-      symbolSize: 4,
-      rippleEffect: {
-        brushType: 'stroke',
-        scale: 2,
-        number: 2
-      },
-      itemStyle: {
-        color: '#f97316',
-        shadowColor: 'rgba(249,115,22,0.3)',
-        shadowBlur: 3
-      },
-      label: {
-        show: true,
-        formatter: (params: unknown) => {
-          const p = params as { name: string }
-          return p.name.split('(')[0]
-        },
-        position: 'right',
-        fontSize: 9,
-        color: '#ea580c'
-      },
-      data: cityScatterData
-    } as never)
-  }
-
   return {
-    geo: cityScatterData.length > 0 ? {
-      map: 'china',
-      roam: true,
-      zoom: 1.2,
-      scaleLimit: { min: 0.8, max: 5 },
-      silent: true,
-      itemStyle: { areaColor: 'transparent', borderWidth: 0 },
-      label: { show: false }
-    } : undefined,
     series,
     tooltip: {
       trigger: 'item',
       formatter: (params: unknown) => {
-        const p = params as { name: string; value: number | number[]; seriesType: string }
-        if (p.seriesType === 'effectScatter') {
-          return `<strong>🏙️ ${p.name.split('(')[0]}</strong><br/>已点亮`
+        const p = params as { name: string; value: number | number[]; seriesType: string; componentType: string }
+        if (p.componentType === 'markPoint') {
+          return `<strong>${p.name.split('(')[0]}</strong><br/>已点亮`
         }
         const val = typeof p.value === 'number' ? p.value : 0
         const status = val === 2 ? '✅ 省已点亮' : val === 1 ? '🏙️ 有城市点亮' : ''
