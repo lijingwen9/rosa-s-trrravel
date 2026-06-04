@@ -12,7 +12,12 @@ export default function CityListPanel({ project, onClose }: CityListPanelProps) 
 
   const cities = CITY_TIERS[activeTier] || []
 
+  const MUNICIPALITIES = new Set(['北京市', '天津市', '上海市', '重庆市', '香港特别行政区', '澳门特别行政区'])
+
   const isCityLit = (cityName: string, province: string): boolean => {
+    if (MUNICIPALITIES.has(province) && project.provinces[province]?.lit) {
+      return true
+    }
     const provinceCities = project.cities[province]
     if (!provinceCities) return false
     for (const [name, data] of Object.entries(provinceCities)) {
